@@ -1,0 +1,23 @@
+[
+ {
+  "id": "1",
+  "nm": "Splendor Plus",
+  "br": "Hero",
+  "cc": "125",
+  "img": "splendor.jpg"
+ },
+ {
+  "id": "2",
+  "nm": "Super Splendor",
+  "br": "Hero",
+  "cc": "100",
+  "img": "sup-splendor.jpg"
+ },
+ {
+  "id": "3",
+  "nm": "HF Deluxe",
+  "br": "Hero",
+  "cc": "95",
+  "img": "hfd.jpg"
+ }
+]
