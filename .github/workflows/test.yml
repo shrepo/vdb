@@ -1,33 +1,71 @@
-# This is a basic workflow to help you get started with Actions
+name: test
 
-name: CI
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      ver:
+        description: 'version number'
+        required: true
+      debug:
+        description: 'isDebug'
+        required: false
+        default: 'false'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+      - name: setup dir
+        run: |
+          mkdir vehicledb vdb
+          find . -type d -not -path '*/\.*'
 
-    # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
+      - uses: actions/checkout@v2
+        with:
+          repository: 'shrepo/vehicledb'
+          token: ${{ secrets.GH_TOKEN_SHDESKSHIP }}
+          persist-credentials: true
+          submodules: true
+          ref: 'master'
+          path: 'vehicledb'
 
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+      - uses: actions/checkout@v2
+        with:
+          repository: 'shrepo/vdb'
+          token: ${{ secrets.GH_TOKEN_SHDESKSHIP }}
+          persist-credentials: true
+          submodules: true
+          ref: 'pothu'
+          path: 'vdb'
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '12'
+
+      - name: Notify Start
+        env:
+          JOB_URL: 'https://github.com/${{ github.repository }}/commit/${{ github.sha }}/checks'
+          TELEGRAM_IDS: '${{ secrets.TELEGRAM_CHAT_AMEEN }},${{ secrets.TELEGRAM_CHAT_HASHMI }}'
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          GH_RUN_NO: ${{ github.run_number }}
+        run: |
+          echo "Job URL - $JOB_URL"
+          echo "TELEGRAM_TOKEN - $TELEGRAM_TOKEN"
+          echo "GH_RUN_NO - $GH_RUN_NO"
+          echo "::set-env name=start_time::`date +%s`"
+          node ./vehicledb/scripts/notifyTelegram.js start
+      - name: publish
+        run: |
+          find . -type d -not -path '*/\.*'
+          cd vehicledb
+          yarn
+          yarn ship
+
+      - name: Notify End
+        if: ${{ always() }}
+        env:
+          TELEGRAM_IDS: '${{ secrets.TELEGRAM_CHAT_AMEEN }},${{ secrets.TELEGRAM_CHAT_HASHMI }}'
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          GH_JOB_STATUS: ${{ job.status }}
+        run: node ./vehicledb/scripts/notifyTelegram.js end
